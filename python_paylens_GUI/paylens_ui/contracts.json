@@ -1,0 +1,460 @@
+{
+  "events": {
+    "Authorization Request": {
+      "schema_version": 1,
+      "event_id": "evt_001",
+      "event_type": "authorization_requested",
+      "event_time": "2026-10-08T09:00:00.000Z",
+      "source": "backend",
+      "payment_id": "pay_001",
+      "attempt_id": "attempt_001",
+      "merchant_id": "mer_001",
+      "order_reference": "order_145",
+      "requested_amount_minor": 100000,
+      "currency": "EGP",
+      "channel": "web",
+      "payment_method": {
+        "type": "card",
+        "card_presence": "CNP",
+        "entry_mode": "online"
+      },
+      "terminal_id": null,
+      "ip_address": "192.0.2.10",
+      "idempotency_key": "auth_attempt_001"
+    },
+    "Authorization Response": {
+      "schema_version": 1,
+      "event_id": "evt_002",
+      "event_type": "authorization_result",
+      "event_time": "2026-10-08T09:00:02.350Z",
+      "source": "api_response",
+      "payment_id": "pay_001",
+      "attempt_id": "attempt_001",
+      "merchant_id": "mer_001",
+      "order_reference": "order_145",
+      "processor": "adyen",
+      "processor_reference": "8812345678901234",
+      "provider_event_time": null,
+      "status": "declined",
+      "provider_status": "Refused",
+      "requested_amount_minor": 100000,
+      "authorized_amount_minor": null,
+      "currency": "EGP",
+      "authorization_code": null,
+      "decline": {
+        "provider_code": "12",
+        "provider_reason": "Not enough balance",
+        "reason": "insufficient_funds"
+      },
+      "action": null,
+      "error": null
+    },
+    "Capture Expectation": {
+      "schema_version": 1,
+      "event_id": "evt_cap_001",
+      "event_type": "capture_expected",
+      "event_time": "2026-10-08T09:00:02.000Z",
+      "source": "backend",
+      "capture_id": "cap_001",
+      "payment_id": "pay_001",
+      "attempt_id": "attempt_001",
+      "merchant_id": "mer_001",
+      "order_reference": "order_145",
+      "capture_mode": "automatic",
+      "processor": "provider_demo",
+      "authorization_reference": "auth_ref_001",
+      "expected_amount_minor": 100000,
+      "currency": "EGP",
+      "expected_capture_at": "2026-10-08T09:00:02.000Z",
+      "follow_up_at": "2026-10-08T09:10:02.000Z"
+    },
+    "Capture Result": {
+      "schema_version": 1,
+      "event_id": "evt_cap_002",
+      "event_type": "capture_result",
+      "event_time": "2026-10-08T09:00:04.000Z",
+      "source": "webhook",
+      "capture_id": "cap_001",
+      "payment_id": "pay_001",
+      "attempt_id": "attempt_001",
+      "merchant_id": "mer_001",
+      "order_reference": "order_145",
+      "capture_mode": "automatic",
+      "processor": "provider_demo",
+      "authorization_reference": "auth_ref_001",
+      "processor_capture_reference": "cap_ref_001",
+      "provider_event_time": "2026-10-08T09:00:03.800Z",
+      "status": "failed",
+      "provider_status": "CAPTURE_FAILED",
+      "captured_amount_minor": null,
+      "currency": "EGP",
+      "failure": {
+        "code": "technical_issue",
+        "provider_code": null,
+        "provider_reason": "Temporary processing issue",
+        "retryable": true
+      },
+      "retry": {
+        "owner": "provider",
+        "state": "scheduled",
+        "next_retry_at": null
+      },
+      "follow_up_at": "2026-10-08T09:15:04.000Z"
+    },
+    "Order Fulfillment": {
+      "schema_version": 1,
+      "event_id": "evt_order_003",
+      "event_type": "order_fulfillment_updated",
+      "event_time": "2026-10-08T09:02:00.000Z",
+      "source": "merchant_update",
+      "merchant_id": "mer_001",
+      "order_reference": "order_145",
+      "fulfillment_status": "delivered",
+      "fulfillment_version": 3,
+      "fulfillment_occurred_at": "2026-10-08T09:01:30.000Z"
+    },
+    "Refund": {
+      "schema_version": "1.0",
+      "event_id": "evt_r100_v3",
+      "event_type": "refund.updated",
+      "refund_version": 3,
+      "emitted_at": "2026-10-12T10:02:01Z",
+      "update_source": "PROVIDER_WEBHOOK",
+      "provider_event_id": "pevt_903",
+      "data": {
+        "refund_id": "ref_100",
+        "merchant_id": "mer_001",
+        "order_id": "ord_7001",
+        "payment_id": "pay_9001",
+        "provider": "DEMO_PROVIDER",
+        "provider_payment_id": "ppay_551",
+        "provider_refund_id": "pref_801",
+        "request_idempotency_key": "mer001_ord7001_full_refund_1",
+        "retry_of_refund_id": null,
+        "refund_amount_minor": 100000,
+        "currency": "EGP",
+        "refund_reason": "CUSTOMER_REQUEST",
+        "status": "PENDING_FUNDS",
+        "status_reason_code": "INSUFFICIENT_FUNDS",
+        "status_reason_message": "Waiting for refundable balance.",
+        "provider_status": "pending",
+        "requested_at": "2026-10-12T10:00:00Z",
+        "status_updated_at": "2026-10-12T10:02:00Z",
+        "provider_updated_at": "2026-10-12T10:01:58Z",
+        "refund_reference": null
+      }
+    }
+  },
+  "csv": {
+    "settlement_entries_DATE.csv": [
+      [
+        "report_id",
+        "string, required"
+      ],
+      [
+        "report_version",
+        "integer, required; corrected-report versions"
+      ],
+      [
+        "entry_id",
+        "string, required; stable within provider/account scope"
+      ],
+      [
+        "provider_id",
+        "string, required"
+      ],
+      [
+        "provider_account_id",
+        "string, required"
+      ],
+      [
+        "merchant_id",
+        "string, required; may require source mapping"
+      ],
+      [
+        "settlement_batch_id",
+        "string, required"
+      ],
+      [
+        "entry_type",
+        "enum, required: SALE / REFUND / CHARGEBACK / FEE / RESERVE_HOLD / RESERVE_RELEASE / ADJUSTMENT"
+      ],
+      [
+        "provider_payment_id",
+        "string, conditional for payment-linked movements"
+      ],
+      [
+        "provider_capture_id",
+        "string, conditional where capture-level linking is available"
+      ],
+      [
+        "original_entry_id",
+        "string, optional"
+      ],
+      [
+        "event_time",
+        "timezone-aware timestamp, required"
+      ],
+      [
+        "settlement_date",
+        "date, required"
+      ],
+      [
+        "record_status",
+        "enum, required: POSTED / PENDING / REVERSED"
+      ],
+      [
+        "gross_amount",
+        "decimal(18,2), required; signed amount in transaction currency"
+      ],
+      [
+        "transaction_currency",
+        "char(3), required"
+      ],
+      [
+        "settlement_currency",
+        "char(3), required"
+      ],
+      [
+        "fx_rate",
+        "decimal(18,8), conditional for currency conversion; 1 when same currency under agreed convention"
+      ],
+      [
+        "gross_settlement_amount",
+        "decimal(18,2), required; signed settlement-currency amount"
+      ],
+      [
+        "fee_amount",
+        "decimal(18,2), required; positive deduction, negative fee reversal under this convention"
+      ],
+      [
+        "net_amount",
+        "decimal(18,2), required; gross_settlement_amount - fee_amount"
+      ],
+      [
+        "source_reference",
+        "string, optional"
+      ]
+    ],
+    "payouts_DATE.csv": [
+      [
+        "report_id",
+        "string, required"
+      ],
+      [
+        "provider_id",
+        "string, required"
+      ],
+      [
+        "provider_account_id",
+        "string, required"
+      ],
+      [
+        "payout_id",
+        "string, required; stable across status snapshots"
+      ],
+      [
+        "merchant_id",
+        "string, required"
+      ],
+      [
+        "beneficiary_account_id",
+        "string, required; internal synthetic reference, not full IBAN"
+      ],
+      [
+        "currency",
+        "char(3), required"
+      ],
+      [
+        "payout_amount",
+        "decimal(18,2), required; positive"
+      ],
+      [
+        "status",
+        "enum, required: SCHEDULED / SENT / FAILED / RETURNED"
+      ],
+      [
+        "scheduled_at",
+        "timestamp, optional"
+      ],
+      [
+        "sent_at",
+        "timestamp, conditional when SENT; dispatch time, not bank deposit time"
+      ],
+      [
+        "expected_arrival_date",
+        "date, optional"
+      ],
+      [
+        "bank_transfer_reference",
+        "string, conditional where available for matching"
+      ],
+      [
+        "updated_at",
+        "timestamp, required"
+      ],
+      [
+        "failure_code",
+        "string, optional"
+      ]
+    ],
+    "payout_allocations_DATE.csv": [
+      [
+        "allocation_id",
+        "string, required; stable allocation identity"
+      ],
+      [
+        "provider_id",
+        "string, required"
+      ],
+      [
+        "provider_account_id",
+        "string, required"
+      ],
+      [
+        "payout_id",
+        "string, required"
+      ],
+      [
+        "entry_id",
+        "string, required; settlement movement reference"
+      ],
+      [
+        "merchant_id",
+        "string, required"
+      ],
+      [
+        "currency",
+        "char(3), required"
+      ],
+      [
+        "allocated_net_amount",
+        "decimal(18,2), required; signed allocated portion"
+      ],
+      [
+        "allocation_source",
+        "enum, required: PROVIDER / DERIVED"
+      ],
+      [
+        "created_at",
+        "timestamp, required"
+      ]
+    ],
+    "bank_statement_ACCOUNT_DATE.csv": [
+      [
+        "statement_id",
+        "string, required"
+      ],
+      [
+        "bank_id",
+        "string, required"
+      ],
+      [
+        "bank_account_id",
+        "string, required; matches beneficiary_account_id where applicable"
+      ],
+      [
+        "merchant_id",
+        "string, required; may be enriched from account ownership"
+      ],
+      [
+        "bank_entry_id",
+        "string, required; stable bank-entry identity"
+      ],
+      [
+        "booking_date",
+        "date, required"
+      ],
+      [
+        "value_date",
+        "date, optional"
+      ],
+      [
+        "currency",
+        "char(3), required"
+      ],
+      [
+        "credit_amount",
+        "decimal(18,2), required; positive credit, zero for debit-only row"
+      ],
+      [
+        "debit_amount",
+        "decimal(18,2), required; positive debit, zero for credit-only row"
+      ],
+      [
+        "transfer_reference",
+        "string, optional"
+      ],
+      [
+        "description",
+        "string, optional"
+      ],
+      [
+        "counterparty_name",
+        "string, optional"
+      ],
+      [
+        "balance_after",
+        "decimal(18,2), optional; reference only, not matching key"
+      ]
+    ],
+    "capture_ledger_DATE.csv": [
+      [
+        "payment_id",
+        "string, required"
+      ],
+      [
+        "order_id",
+        "string, required; not sufficient alone as a financial key"
+      ],
+      [
+        "merchant_id",
+        "string, required"
+      ],
+      [
+        "provider_id",
+        "string, required"
+      ],
+      [
+        "provider_account_id",
+        "string, required"
+      ],
+      [
+        "provider_payment_id",
+        "string, required"
+      ],
+      [
+        "provider_capture_id",
+        "string, optional; preferred link when supplied"
+      ],
+      [
+        "capture_attempt_id",
+        "string, required; distinct retry attempt identity"
+      ],
+      [
+        "capture_status",
+        "enum, required: PENDING / SUCCEEDED / FAILED"
+      ],
+      [
+        "captured_amount",
+        "decimal(18,2), conditional; final successful capture amount"
+      ],
+      [
+        "currency",
+        "char(3), required"
+      ],
+      [
+        "captured_at",
+        "timestamp, conditional on successful capture"
+      ],
+      [
+        "expected_settlement_date",
+        "date, conditional; future provider/cutoff/business-day policy"
+      ],
+      [
+        "updated_at",
+        "timestamp, required"
+      ]
+    ]
+  }
+}
