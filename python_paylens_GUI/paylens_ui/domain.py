@@ -134,9 +134,3 @@ def csv_rows():
         row.update(capture_attempt_id=f"ca_{state.lower()}", capture_status=state, captured_amount=None, captured_at=None, provider_capture_id=None, expected_settlement_date=None)
         ledger.append(row)
     return result
-
-
-def entities(kind):
-    if kind == "customers":
-        return [dict(customer_id=f"cus_{i:03}", display_name=f"Synthetic Customer {i}", email=f"demo{i}@example.invalid", country="EG", status="active", scenario_tags=[]) for i in range(1, 5)]
-    return [dict(merchant_id=f"mer_{i:03}", display_name=f"Demo Merchant {i}", status="active", default_currency="EGP", provider_id="provider_demo", provider_account_id="pa_demo", accounts=[dict(beneficiary_account_id="bankacct_demo", bank_id="bank_demo")]) for i in range(1, 4)]

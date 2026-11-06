@@ -1,0 +1,35 @@
+T01 ----> create random auth request and send it ----  then create approved auth_res after 3 seconds
+T02 ----> create random auth request and send it ----  then create declined auth_res after 3 seconds for insufficient amount
+T03 ----> create random auth request and send it ----  then create declined auth_res after 3 seconds for unspecified reason
+T04 ----> create random auth request and send it ----  then create need additional action like OTP in auth_response after 3 seconds ---- after 10 seconds send updates
+          in auth_res with approval.
+
+T05 ----> create random auth request and send it ----  then create need additional action like OTP in auth_response after 3 seconds ---- after 10 seconds send updates
+          in auth_res with declined because of wrong OTP.
+
+T06 ----> create random auth request and send it ----  then after 3 seconds send auth_res with pending --------- after 30 seconds return auth_res with approved.
+T07 ----> create random auth request and send it ----  then after 3 seconds send auth_res with pending --------- after 30 seconds return auth_res with declined
+          for unspecified reason.
+    
+T08 ----> Publish requested, then after 3 seconds error with a technical code, message and origin The attempt is categorized as a technical failure
+          auth_request will be sent again with new attempt id ---- after 3 seconds the auth_response will return approved.
+
+T09 ----> duplicate request --- one respond for approval.
+T10 ----> create random auth request and send it ---- duplicate response approval.
+T11 ----> create random auth request and send it ---- auth_res from source backend to approve and also webhook source to approve the same auth_request.
+T12 ----> create auth_res and send it before sending auth_request by 5 seconds.
+T13 ----> create auth_reqest with no result.
+T14 ----> create auth_res for no request.
+T15 ----> create random auth request and send it ----- auth_respond with approval ---- after 1 minute send auth_respond with pending status.
+
+Alerts tests 
+--------------------------------------------
+
+T16 ----> create random auth request and send it with Required field missing.
+T17 ----> create random auth request and send it with Invalid amount or currency.
+T18 ----> create random auth request and send it ----- respones with Unsupported status or version.
+T19 ----> Request/result mismatch
+T20 ----> create random auth request and send it ----- create another one with Event ID reused with different data.
+T21 ----> create random auth request and send it ----- Send authorized with a missing/wrong amount.
+--------------------------------------------------------------
+T22 ----> create random auth request and send it ----- Send authorized ---- then after 3 minutes send them again with same data.

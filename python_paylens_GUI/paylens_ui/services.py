@@ -10,8 +10,6 @@ class IntegrationHooks(QObject):
     request_send_event = Signal(object, object)
     request_send_stack = Signal(object, object)
     request_generate_batch_files = Signal(object)
-    request_generate_customers = Signal(object)
-    request_generate_merchants = Signal(object)
     request_export = Signal(str, object, object)
     request_save_history = Signal(object, object)
     request_test_connection = Signal(object)
@@ -19,7 +17,7 @@ class IntegrationHooks(QObject):
 
     def __init__(self):
         super().__init__()
-        for name in ("request_generate_batch_files", "request_generate_customers", "request_generate_merchants", "request_test_connection"):
+        for name in ("request_generate_batch_files", "request_test_connection"):
             getattr(self, name).connect(lambda config, n=name: self.feedback.emit(f"SIMULATED: {n.removeprefix('request_')} configuration received. No external operation performed."))
         self.request_export.connect(lambda kind, selection, options: self.feedback.emit(f"SIMULATED: {kind} export requested for {len(selection)} item(s). No files written."))
         self.request_save_history.connect(lambda payload, metadata: self.feedback.emit("SIMULATED: history save requested; pending integration. No file saved."))

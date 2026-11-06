@@ -33,7 +33,6 @@ class UiSmoke(unittest.TestCase):
         app.processEvents()
 
     def tearDown(self):
-        self.window.adapter.timer.stop()
         self.window.hide()
         self.window.deleteLater()
         app.processEvents()
@@ -228,17 +227,27 @@ class UiSmoke(unittest.TestCase):
         w.batch.allocations.setChecked(True)
         self.assertEqual(len(w.batch.config(True)["files"]), 5)
 
-    def test_entities_and_references(self):
+    def test_external_merchant_ids_and_navigation(self):
         w = self.window
-        self.assertGreater(w.reference_count("merchant_id", "mer_001"), 0)
-        original = snapshot(w.composer.drafts)
-        w.merchants.table.selectRow(0)
-        w.merchants.clone()
-        self.assertEqual(len(w.merchants.records), 4)
-        w.merchants.table.selectRow(0)
-        w.merchants.disable()
-        self.assertEqual(w.merchants.records[0]["status"], "inactive")
-        self.assertEqual(w.composer.drafts, original)
+        self.assertEqual([b.text() for b in w.nav.buttons()],
+                         ["Event Composer", "Event Stack", "Batch Files", "Event History", "Settings"])
+        self.assertEqual(w.pages.count(), 5)
+        for name in ("customers", "merchants"):
+            self.assertFalse(hasattr(w, name))
+            self.assertFalse(hasattr(w.hooks, f"request_generate_{name}"))
+        for name, sample in SAMPLES.items():
+            with self.subTest(name=name):
+                w.composer.schema.setCurrentText(name)
+                path = ("data", "merchant_id") if name == "Refund" else ("merchant_id",)
+                w.composer.form.fields[path].editor.setText("merchant_from_sql")
+                payload = w.composer.drafts[name]
+                self.assertEqual(body(payload)["merchant_id"], "merchant_from_sql")
+                self.assertNotIn("customer_id", body(payload))
+                self.assertEqual(validate(payload, name), [])
+                w.add_to_stack(payload, dict(schema=name, scenario="Existing SQL merchant", testing=False))
+                self.assertEqual(w.stack.items[-1]["payload"], payload)
+                self.assertEqual(w.history.records[-1]["payload"], payload)
+                self.assertNotEqual(body(sample)["merchant_id"], "merchant_from_sql")
 
     def test_resolutions_and_all_pages(self):
         w = self.window
@@ -246,7 +255,7 @@ class UiSmoke(unittest.TestCase):
             w.resize(width, height)
             app.processEvents()
             self.assertEqual(w.size().toTuple(), (width, height))
-            for index in range(7):
+            for index in range(w.pages.count()):
                 w.navigate(index)
                 app.processEvents()
                 page = w.pages.currentWidget()
@@ -261,15 +270,13 @@ def screenshots():
     window.show()
     for name, payload in SAMPLES.items():
         window.add_to_stack(payload, dict(schema=name, scenario="Exact supplied sample • independent fixture", testing=False))
-    window.merchants.table.selectRow(0)
-    window.customers.table.selectRow(0)
     window.stack.table.selectRow(0)
     window.history.table.selectRow(0)
     destination = ROOT / "screenshots"
     destination.mkdir(exist_ok=True)
     for width, height in ((1280, 800), (1440, 900), (1920, 1080)):
         window.resize(width, height)
-        for index, name in ((0, "composer"), (1, "stack"), (2, "batch"), (3, "customers"), (4, "merchants"), (5, "history"), (6, "settings")):
+        for index, name in enumerate(("composer", "stack", "batch", "history", "settings")):
             window.navigate(index)
             app.processEvents()
             if width == 1440 or index in (0, 2):

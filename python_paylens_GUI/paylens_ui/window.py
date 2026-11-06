@@ -10,13 +10,12 @@ from .theme import THEME, ensure_fonts
 from .settings import SettingsPage
 from .composer import Composer
 from .events import StackPage, HistoryPage
-from .entities import EntityPage
 from .batch import BatchPage
 from config import load_settings
 
 
 class MainWindow(QMainWindow):
-    PAGE_NAMES = ["Event Composer", "Event Stack", "Batch Files", "Customers", "Merchants", "Event History", "Settings"]
+    PAGE_NAMES = ["Event Composer", "Event Stack", "Batch Files", "Event History", "Settings"]
 
     def __init__(self):
         super().__init__()
@@ -32,14 +31,12 @@ class MainWindow(QMainWindow):
         self.dispatch_worker = None
         self._close_when_dispatch_finishes = False
         self.settings = SettingsPage(self.hooks)
-        self.customers = EntityPage("customers", self.hooks, self.reference_count)
-        self.merchants = EntityPage("merchants", self.hooks, self.reference_count)
-        self.composer = Composer(self.hooks, self.selectors)
+        self.composer = Composer(self.hooks)
         self.stack = StackPage(self.hooks)
         self.history = HistoryPage(self.hooks, self.settings.values)
         self.batch = BatchPage(self.hooks)
         self.pages = QStackedWidget()
-        for page in (self.composer, self.stack, self.batch, self.customers, self.merchants, self.history, self.settings):
+        for page in (self.composer, self.stack, self.batch, self.history, self.settings):
             self.pages.addWidget(page)
         central = QWidget()
         layout = QHBoxLayout(central)
@@ -85,8 +82,6 @@ class MainWindow(QMainWindow):
         self.stack.export_requested.connect(self.export_stack_json)
         self.history.load_requested.connect(self.load_history)
         self.settings.changed.connect(self.apply_settings)
-        self.customers.changed.connect(self.entities_changed)
-        self.merchants.changed.connect(self.entities_changed)
 
     def feedback(self, message):
         self.statusBar().showMessage(message)
@@ -95,32 +90,6 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(index)
         self.nav.button(index).setChecked(True)
         self.title.setText("Transaction Event Generator" if index == 0 else self.PAGE_NAMES[index])
-
-    def selectors(self):
-        return {"merchant_id": [str(r.get("merchant_id", "")) for r in self.merchants.records],
-                "customer_id": [str(r.get("customer_id", "")) for r in self.customers.records]}
-
-    def reference_count(self, key, value):
-        def contains(obj):
-            if isinstance(obj, dict):
-                return obj.get(key, object()) == value or any(contains(v) for v in obj.values())
-            if isinstance(obj, list):
-                return any(contains(v) for v in obj)
-            return False
-        return sum(contains(p) for p in self.composer.drafts.values()) + sum(contains(r["payload"]) for r in self.stack.items)
-
-    def entities_changed(self):
-        # Update choices in place, retaining manual overrides and draft snapshots.
-        for path, field in self.composer.form.fields.items():
-            if path[-1] in self.selectors():
-                combo = field.editor
-                text = combo.currentText()
-                combo.blockSignals(True)
-                combo.clear()
-                combo.addItems(self.selectors()[path[-1]])
-                combo.setCurrentText(text)
-                combo.blockSignals(False)
-        self.feedback("Demo entity records updated. Event drafts and captured snapshots retain their existing values.")
 
     def add_to_stack(self, payload, metadata):
         if self.dispatch_running:

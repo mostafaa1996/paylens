@@ -1,0 +1,39 @@
+T01 ---> select one of Published approved authorization, send capture_expected for it --- then after 1 minute a confirmed succeeded result for EGP 1,000
+T02 ---> select one declined or unresolved authorization, don`t send capture_expected --- send capture_result approved. (Alert) <<<<<<<<<<<<<
+         Flag the inconsistent injected record .... (keep the capture event inside capture_gold but not included in our expected_settlement) 
+
+T03 ---> select one of Published approved authorization, send capture_expected with expected_capture_at now() and follow_up_at after now by 3 minutes 
+          ----- then send the capture_result approved after 10 minutes. (overdue-capture alert)<<<<<<<<<<<<<
+
+T04 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with pending status and Processing in provider_status and 
+         the amount is null --- then after one hour send capture_result with status capture_succeeded and the correct amount.( Alert then fine) <<<< 
+
+T05 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=schduled and after follow_up_at by 
+         5 minutes send the capture_result with approved and correct amount.
+
+T06 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=schduled and after follow_up_at by 
+         5 minutes send the capture_result with failed again and retry=exhausted.(Alert) <<<<<<<<<<<<<
+
+T07 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=no retry. (Alert) <<<<<<<<<<<<<
+
+في الفايل بتاع الاختبارات اختبار 4 زي 10 مع 11 و زي 12 
+
+T08 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=no retry and order_fulfillment 
+         status= delivered. (High priorty Alert) <<<<<<<<<<<<<<
+
+T09 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=no retry and order_fulfillment 
+         status= not delivered. (Alert before delivery to decide to make order state failed).
+
+T10 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=no retry and order_fulfillment 
+         status= unknown. (Alert before delivery to decide to make order state failed).
+
+T11 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with failed with retry=no retry and order_fulfillment 
+         status= unknown then send order_fulfillment with status = delivered after 1 hour. (Alert converted from yellow or warning to red High)<<<<<<
+
+T12 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with approved and duplicate it.
+T13 ---> send capture_result before its auth_approval.
+T14 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with approved after 5 minutes send capture_result with failed.
+T15 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with wrong data event_id or capture_id is wrong.
+T16 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with mismatch amount or currency.
+T17 ---> select one of Published approved authorization, send capture_expected ---- send capture_result with event_id approved and then send 
+         capture_result with same event_id failed.

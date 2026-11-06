@@ -90,7 +90,7 @@ class InlineMessage(QLabel):
 class Field(QWidget):
     changed = Signal()
 
-    def __init__(self, key, value, sample, selectors=None):
+    def __init__(self, key, value, sample):
         super().__init__()
         self.key, self.sample = key, sample
         self.original = value if value is MISSING else snapshot(value)
@@ -113,14 +113,6 @@ class Field(QWidget):
             self.editor.setFixedHeight(100)
             self.editor.set_payload(initial if isinstance(initial, self.typ) else self.typ())
             self.editor.textChanged.connect(self.on_change)
-        elif selectors:
-            self.editor = QComboBox()
-            self.editor.setEditable(True)
-            self.editor.addItems(selectors)
-            self.editor.setCurrentText(str(initial or ""))
-            self.editor.completer().setCaseSensitivity(Qt.CaseInsensitive)
-            self.editor.completer().setFilterMode(Qt.MatchContains)
-            self.editor.currentTextChanged.connect(self.on_change)
         elif self.typ is bool:
             self.editor = QComboBox()
             self.editor.addItems(["true", "false"])
@@ -190,12 +182,11 @@ class Field(QWidget):
 class PayloadForm(QWidget):
     changed = Signal()
 
-    def __init__(self, payload, sample, selectors=None):
+    def __init__(self, payload, sample):
         super().__init__()
         self.original = snapshot(payload)
         self.fields, self.object_states = {}, {}
         self.object_touched = set()
-        self.selectors = selectors or {}
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(3, 3, 12, 3)
         groups = {name: {} for name in ("Identity", "Business Details", "Provider / Outcome", "Event Metadata")}
@@ -232,7 +223,7 @@ class PayloadForm(QWidget):
                 state.currentTextChanged.connect(lambda _, p=path: self.object_changed(p))
                 form.addRow(box)
             else:
-                field = Field(key, value, exemplar, self.selectors.get(key))
+                field = Field(key, value, exemplar)
                 self.fields[path] = field
                 field.changed.connect(self.changed)
                 form.addRow(key.replace("_", " ").capitalize(), field)

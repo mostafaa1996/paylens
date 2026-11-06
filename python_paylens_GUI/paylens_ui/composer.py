@@ -11,9 +11,9 @@ class Composer(QWidget):
     add_requested = Signal(object, object)
     send_requested = Signal(object, object)
 
-    def __init__(self, hooks, selectors):
+    def __init__(self, hooks):
         super().__init__()
-        self.hooks, self.selectors = hooks, selectors
+        self.hooks = hooks
         self.drafts = {k: snapshot(v) for k, v in SAMPLES.items()}
         self.dirty = set()
         self.current_name = next(iter(SAMPLES))
@@ -68,7 +68,7 @@ class Composer(QWidget):
         while self.left_layout.count():
             widget = self.left_layout.takeAt(0).widget()
             widget.deleteLater()
-        self.form = PayloadForm(self.drafts[self.current_name], SAMPLES[self.current_name], self.selectors())
+        self.form = PayloadForm(self.drafts[self.current_name], SAMPLES[self.current_name])
         self.left_layout.addWidget(scroll(self.form))
         self.form.changed.connect(self.form_changed)
         _, self.field_errors = self.form.payload()
