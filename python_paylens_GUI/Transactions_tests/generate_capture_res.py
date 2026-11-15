@@ -1,40 +1,34 @@
-from pathlib import Path
+﻿from pathlib import Path
 import sys
+import random
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-import random
-import json
+
+from Transactions_tests.generate_capture_exp import generate_capture_exp_payload
+from Transactions_tests.payload_defaults import PayloadDefaults, cached_payload
 from utils.generate_random_ids import generate_event_id, generate_capture_id
-from utils.generate_time import  utc_now_plus_seconds , utc_now
+from utils.generate_time import utc_now_plus_seconds, utc_now
 
 available_source = ["backend", "webhook"]
-def generate_capture_res_payload(payload_auth_res , payload_capture_req):
-    Auth_res_payload = json.loads(payload_auth_res)
-    Capture_req_payload = json.loads(payload_capture_req)
-    source = random.choice(available_source)
-    payload = {
-       "schema_version": 1,  
-       "event_id": generate_event_id(),
-       "event_type": "capture.response",
-       "event_time":  utc_now_plus_seconds(5),
-       "source": source, 
-       "capture_id": Capture_req_payload["capture_id"],
-       "payment_id": Auth_res_payload["payment_id"],
-       "attempt_id": Auth_res_payload["attempt_id"],
-       "merchant_id": Auth_res_payload["merchant_id"],
-       "order_reference": Auth_res_payload["order_reference"],
-       "capture_mode": "automatic",
-       "processor": Auth_res_payload["processor"],
-       "authorization_reference": Auth_res_payload["processor_reference"],
-       "processor_capture_reference": generate_capture_id(),
-       "processor_event_time": utc_now(), 
-       "status": "succeeded",
-       "captured_amount_minor": Auth_res_payload["requested_amount_minor"],
-       "currency": Auth_res_payload["currency"],
-       "failure": None,
-       "retry": None,
-    }
-    
-    damped_payload = json.dumps(payload, indent=4)
-    return damped_payload
+
+
+def generate_capture_res_payload(payload=None, *previous_payloads, cursor=None, merchant=None):
+    values = PayloadDefaults(payload, previous_payloads)
+    capture = cached_payload(lambda: generate_capture_exp_payload(None, *previous_payloads, cursor=cursor, merchant=merchant))
+    values.add("schema_version", 1)
+    values.add("event_id", generate_event_id)
+    values.add("event_type", "capture.response")
+    values.add("event_time", lambda: utc_now_plus_seconds(5))
+    values.add("source", lambda: random.choice(available_source))
+    for key in ("capture_id", "payment_id", "attempt_id", "merchant_id", "order_reference", "capture_mode", "processor"):
+        values.add(key, lambda key=key: capture(key), inherit=True)
+    values.add("authorization_reference", lambda: capture("authorization_reference"), inherit=True, aliases=("processor_reference",))
+    values.add("processor_capture_reference", generate_capture_id)
+    values.add("processor_event_time", utc_now)
+    values.add("status", "succeeded")
+    values.add("captured_amount_minor", lambda: capture("expected_amount_minor"), inherit=True, aliases=("expected_amount_minor", "requested_amount_minor"))
+    values.add("currency", lambda: capture("currency"), inherit=True)
+    values.add("failure")
+    values.add("retry")
+    return values.to_json()

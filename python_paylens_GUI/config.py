@@ -19,6 +19,8 @@ class Settings:
     topic_refund: str
     topic_order_fulfillment: str
     base_dir: Path
+    sql_connection_string: str = ""
+    eventhub_connection_string: str = ""
 
 
 def load_settings(base_dir: Path | str | None = None) -> Settings:
