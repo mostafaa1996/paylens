@@ -38,6 +38,8 @@ def load_settings(base_dir: Path | str | None = None) -> Settings:
         topic_refund=os.getenv("TOPIC_REFUND", "REFUND").strip(),
         topic_order_fulfillment=os.getenv("TOPIC_ORDER_FULFILLMENT", "ORDER_FULFILLMENT").strip(),
         base_dir=root,
+        sql_connection_string=os.getenv("SQL_CONNECTION_STRING", "").strip(),
+        eventhub_connection_string=os.getenv("EVENTHUB_CONNECTION_STRING", "").strip()
     )
     validate_settings(settings)
     return settings
