@@ -19,7 +19,7 @@ def generate_auth_request_payload(payload=None, *previous_payloads, cursor=None,
     values.add("schema_version", 1)
     values.add("event_id", generate_event_id)
     values.add("event_type", "authorization.requested")
-    values.add("event_time", utc_now)
+    values.add("event_time", utc_now, force_default=True)
     values.add("source", "backend")
     values.add("payment_id", generate_payment_id, inherit=True)
     values.add("attempt_id", generate_attempt_id, inherit=True)
@@ -27,7 +27,11 @@ def generate_auth_request_payload(payload=None, *previous_payloads, cursor=None,
     values.add("order_reference", generate_order_reference, inherit=True)
     values.add("requested_amount_minor", lambda: 10000 + random.randint(0, 999999), inherit=True)
     values.add("currency", "EGP", inherit=True)
-    channel = values.add("channel", lambda: random.choice(available_channel), inherit=True)
+    selected_mode = terminal_id is not None
+    online = terminal_id == 'online'
+    channel = values.add("channel", ('web' if online else 'pos') if selected_mode
+                         else lambda: random.choice(available_channel),
+                         inherit=True, force_default=selected_mode)
 
     def payment_token():
         if cursor is None or values.result["merchant_id"] is None:
@@ -57,7 +61,16 @@ def generate_auth_request_payload(payload=None, *previous_payloads, cursor=None,
         values.result["payment_method"] = fill_defaults(method_template, method_defaults)
     else:
         values.result["payment_method"] = method_template
-    values.add("terminal_id", terminal_id if channel == "pos" else None, inherit=True)
-    values.add("ip_address", None if channel == "pos" else ip_address, inherit=True)
+    if selected_mode:
+        method = values.result['payment_method']
+        if not isinstance(method, dict):
+            method = fill_defaults({}, method_defaults)
+            values.result['payment_method'] = method
+        method.update(card_presence='CNP' if online else 'CP',
+                      entry_mode='online' if online else 'offline')
+    values.add("terminal_id", terminal_id if channel == "pos" else None,
+               inherit=True, force_default=selected_mode)
+    values.add("ip_address", None if channel == "pos" else ip_address,
+               inherit=True, force_default=selected_mode)
     values.add("idempotency_key", generate_idempotency_key)
     return values.to_json()

@@ -1,1 +1,1 @@
-"""Offline presentation prototype for PayLens Simulator."""
+"""PayLens desktop UI for workbook cases, Event Hubs dispatch and batch previews."""

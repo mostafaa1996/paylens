@@ -12,6 +12,29 @@ from Transactions_tests.generate_order_fulfillment import generate_order_fulfill
 
 
 class TransactionPayloadTests(unittest.TestCase):
+    def test_explicit_terminal_mode_overrides_only_request_connection_fields(self):
+        template = {'channel': 'mobile', 'terminal_id': 'excel-terminal',
+                    'ip_address': 'excel-ip',
+                    'payment_method': {'token': 'keep-token', 'type': 'card',
+                                       'card_presence': 'wrong', 'entry_mode': 'wrong'}}
+        original = deepcopy(template)
+        for terminal, channel, presence, mode, ip in (
+            ('T-22', 'pos', 'CP', 'offline', None),
+            ('online', 'web', 'CNP', 'online', '192.0.2.10'),
+        ):
+            with self.subTest(terminal=terminal):
+                request = json.loads(generate_auth_request_payload(template, terminal_id=terminal))
+                self.assertEqual(request['channel'], channel)
+                self.assertEqual(request['payment_method']['card_presence'], presence)
+                self.assertEqual(request['payment_method']['entry_mode'], mode)
+                self.assertEqual(request['payment_method']['token'], 'keep-token')
+                self.assertEqual(request['terminal_id'], None if terminal == 'online' else terminal)
+                self.assertEqual(request['ip_address'], ip)
+                response = json.loads(generate_auth_response_payload(template, request))
+                for key in ('channel', 'terminal_id', 'ip_address', 'payment_method'):
+                    self.assertEqual(response[key], template[key])
+        self.assertEqual(template, original)
+
     def test_full_sequence_keeps_correlations_and_fresh_events(self):
         request = json.loads(generate_auth_request_payload({"merchant_id": 21}))
         response = json.loads(generate_auth_response_payload(None, request))
@@ -108,11 +131,15 @@ class TransactionPayloadTests(unittest.TestCase):
         self.assertIsNone(result["authorized_amount_minor"])
         self.assertEqual(result["decline"], {"reason": "insufficient_funds", "provider_code": None, "provider_reason": None})
 
-    def test_complete_template_avoids_generation_and_database_queries(self):
+    def test_complete_template_keeps_values_except_forced_times_without_database_queries(self):
         template = json.loads(generate_auth_response_payload({"merchant_id": 21, "processor": "processor"}))
         cursor = Mock()
-        with patch("Transactions_tests.generate_Auth_res.generate_auth_request_payload", side_effect=AssertionError("Unexpected generation")):
-            self.assertEqual(json.loads(generate_auth_response_payload(template, cursor=cursor)), template)
+        forced_time = '2026-11-16T12:00:00.000Z'
+        expected = {**template, 'event_time': forced_time, 'processor_event_time': forced_time}
+        with patch("Transactions_tests.generate_Auth_res.generate_auth_request_payload", side_effect=AssertionError("Unexpected generation")), \
+             patch('Transactions_tests.generate_Auth_res.utc_now_plus_seconds', return_value=forced_time) as clock:
+            self.assertEqual(json.loads(generate_auth_response_payload(template, cursor=cursor)), expected)
+        self.assertEqual(clock.call_count, 2)
         cursor.execute.assert_not_called()
 
 

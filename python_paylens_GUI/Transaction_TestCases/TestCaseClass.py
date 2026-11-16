@@ -5,8 +5,9 @@ from Transactions_tests.generate_order_fulfillment import generate_order_fulfill
 from Transactions_tests.generate_capture_exp import generate_capture_exp_payload
 from Transactions_tests.generate_capture_res import generate_capture_res_payload
 from utils.Sql_interface import create_sql_connection
+from utils.generate_time import utc_now
 class TestStepClass:
-    def __init__(self, row):
+    def __init__(self, row , merchant , terminal_id , PreviousDispatchPayloads ):
         self.step = row['Step']
         self.DispatchEvent = row['Dispatch T+ seconds']
         self.sourceEvent = row['Logical event T+ seconds']
@@ -15,35 +16,53 @@ class TestStepClass:
         self.status = row['Status / check']
         self.payload = row['Payload JSON']
         
-    def run_test_step(self , previous_payloads = [] , merchant=None , terminal_id=None):
+        self.build_test_step(
+            previous_payloads=PreviousDispatchPayloads,
+            merchant=merchant,
+            terminal_id=terminal_id
+        )
+        
+        
+    def build_test_step(self , previous_payloads = [] , merchant=None , terminal_id=None):
       cursor = create_sql_connection()
       if self.Event == 'authorization.requested':
-        return generate_auth_request_payload(self.payload , 
+        self.payload =  generate_auth_request_payload(self.payload , 
                                              *previous_payloads , 
                                              cursor = cursor 
                                              , merchant = merchant , 
                                              terminal_id = terminal_id)
+        previous_payloads.append(self.payload)
       if self.Event == 'authorization.response':
-        return generate_auth_response_payload(self.payload , 
+        self.payload = generate_auth_response_payload(self.payload , 
                                               *previous_payloads ,
                                               cursor = cursor , 
                                               merchant = merchant , 
-                                              status = self.status)
+                                              status = self.status,
+                                              dispatch_time = float(self.DispatchEvent)
+                                              )
+        previous_payloads.append(self.payload)
       if self.Event == 'order.fulfillment':
-        return generate_order_fulfillment_payload(self.payload ,
+        self.payload = generate_order_fulfillment_payload(self.payload ,
                                                   *previous_payloads ,
                                                   cursor = cursor ,
                                                   merchant = merchant)
+        previous_payloads.append(self.payload)
       if self.Event == 'capture.expected':
-        return generate_capture_exp_payload(self.payload ,
+        self.payload = generate_capture_exp_payload(self.payload ,
                                             *previous_payloads ,
                                             cursor = cursor ,
-                                            merchant = merchant)
+                                            merchant = merchant,
+                                            dispatch_time = float(self.DispatchEvent)
+                                            )
+        previous_payloads.append(self.payload)
       if self.Event == 'capture.response':
-        return generate_capture_res_payload(self.payload ,
+        self.payload = generate_capture_res_payload(self.payload ,
                                             *previous_payloads ,
                                             cursor = cursor ,
-                                            merchant = merchant)
+                                            merchant = merchant ,
+                                            dispatch_time = float(self.DispatchEvent)
+                                            )
+        previous_payloads.append(self.payload)
 class TestCaseClass:
     def __init__(self, 
                  excel_payload , CaseID , 
@@ -58,27 +77,23 @@ class TestCaseClass:
         self.TransactionStepsNumber = excel_payload['Steps']
         self.TestSteps = []
         self.PreviousDispatchPayloads = []
-        self.DispatchPayload = None
         self.merchant = merchant
         self.terminal_id = terminal_id
         self.sender = callback_function_sender
         for i in TestSteps:
             if i['Case ID'] == CaseID:
-                self.TestSteps.append(TestStepClass(i)) 
+                self.TestSteps.append(TestStepClass(row=i , 
+                                                    merchant=merchant , 
+                                                    terminal_id=terminal_id , 
+                                                    PreviousDispatchPayloads = self.PreviousDispatchPayloads)) 
         
         self.TestSteps.sort(key=lambda obj: 
              (float(obj.DispatchEvent) , int(obj.step)))
        
     def run_test_case(self):
         for i in range(len(self.TestSteps)):
-            self.DispatchPayload = self.TestSteps[i].run_test_step(
-                 previous_payloads = self.PreviousDispatchPayloads,
-                 merchant=self.merchant,
-                 terminal_id=self.terminal_id
-                )
-            self.sender(self.DispatchPayload)
+            self.sender(self.TestSteps[i].payload)
             if i+1 == len(self.TestSteps):
                 break
-            self.PreviousDispatchPayloads.append(self.DispatchPayload)
             time.sleep(float(self.TestSteps[i+1].DispatchEvent))
             

@@ -13,19 +13,19 @@ from utils.generate_time import utc_now_plus_seconds, utc_now
 available_source = ["backend", "webhook"]
 
 
-def generate_capture_res_payload(payload=None, *previous_payloads, cursor=None, merchant=None):
+def generate_capture_res_payload(payload=None, *previous_payloads, cursor=None, merchant=None , dispatch_time=None):
     values = PayloadDefaults(payload, previous_payloads)
     capture = cached_payload(lambda: generate_capture_exp_payload(None, *previous_payloads, cursor=cursor, merchant=merchant))
     values.add("schema_version", 1)
     values.add("event_id", generate_event_id)
     values.add("event_type", "capture.response")
-    values.add("event_time", lambda: utc_now_plus_seconds(5))
+    values.add("event_time", lambda: utc_now_plus_seconds(dispatch_time if dispatch_time is not None else 5), force_default=True)
     values.add("source", lambda: random.choice(available_source))
     for key in ("capture_id", "payment_id", "attempt_id", "merchant_id", "order_reference", "capture_mode", "processor"):
         values.add(key, lambda key=key: capture(key), inherit=True)
     values.add("authorization_reference", lambda: capture("authorization_reference"), inherit=True, aliases=("processor_reference",))
     values.add("processor_capture_reference", generate_capture_id)
-    values.add("processor_event_time", utc_now)
+    values.add("processor_event_time", lambda: utc_now_plus_seconds(dispatch_time-2 if dispatch_time is not None else 5), force_default=True)
     values.add("status", "succeeded")
     values.add("captured_amount_minor", lambda: capture("expected_amount_minor"), inherit=True, aliases=("expected_amount_minor", "requested_amount_minor"))
     values.add("currency", lambda: capture("currency"), inherit=True)

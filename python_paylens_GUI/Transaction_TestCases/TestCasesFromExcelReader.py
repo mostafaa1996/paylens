@@ -15,12 +15,12 @@ class TestCasesFromExcelReader(ExcelFileReader):
         df = self.read_excel_file_with_sheet(sheet_name="Selected" , header=7)
         if df is not None:
             df.columns = df.columns.str.strip()
-            self.TestCases = df.to_dict(orient="records")
+            self.TestCases = df.astype(object).where(df.notna(), None).to_dict(orient="records")
         return self.TestCases
 
     def read_test_steps(self):
         df = self.read_excel_file_with_sheet(sheet_name="Steps" , header=5)
         if df is not None:
             df.columns = df.columns.str.strip()
-            self.TestStepsPerTestCase = df.to_dict(orient="records")
+            self.TestStepsPerTestCase = df.astype(object).where(df.notna(), None).to_dict(orient="records")
         return self.TestStepsPerTestCase

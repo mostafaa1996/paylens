@@ -10,13 +10,13 @@ from utils.generate_random_ids import generate_event_id, generate_capture_id
 from utils.generate_time import utc_now, utc_now_plus_seconds
 
 
-def generate_capture_exp_payload(payload=None, *previous_payloads, cursor=None, merchant=None):
+def generate_capture_exp_payload(payload=None, *previous_payloads, cursor=None, merchant=None , dispatch_time=None):
     values = PayloadDefaults(payload, previous_payloads)
     authorization = cached_payload(lambda: generate_auth_response_payload(None, *previous_payloads, cursor=cursor, merchant=merchant))
     values.add("schema_version", 1)
     values.add("event_id", generate_event_id)
     values.add("event_type", "capture.expected")
-    values.add("event_time", utc_now)
+    values.add("event_time", lambda: utc_now_plus_seconds(dispatch_time if dispatch_time is not None else 5), force_default=True)
     values.add("source", "backend")
     values.add("capture_id", generate_capture_id, inherit=True)
     for key in ("payment_id", "attempt_id", "merchant_id", "order_reference"):
@@ -26,6 +26,6 @@ def generate_capture_exp_payload(payload=None, *previous_payloads, cursor=None, 
     values.add("authorization_reference", lambda: authorization("processor_reference"), inherit=True, aliases=("processor_reference",))
     values.add("expected_amount_minor", lambda: authorization("requested_amount_minor"), inherit=True, aliases=("requested_amount_minor",))
     values.add("currency", lambda: authorization("currency"), inherit=True)
-    values.add("expected_capture_at", lambda: utc_now_plus_seconds(60))
-    values.add("follow_up_at", lambda: utc_now_plus_seconds(180))
+    values.add("expected_capture_at", lambda: utc_now_plus_seconds(60), force_default=True)
+    values.add("follow_up_at", lambda: utc_now_plus_seconds(180), force_default=True)
     return values.to_json()

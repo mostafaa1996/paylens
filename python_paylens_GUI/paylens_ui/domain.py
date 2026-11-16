@@ -1,15 +1,11 @@
-"""Contract fixtures and local structural checks, not complete JSON Schemas."""
+"""Shared snapshot/time helpers and CSV preview fixtures."""
 import copy
 import json
 from datetime import datetime, timezone
-from decimal import Decimal, localcontext
 from pathlib import Path
 from uuid import uuid4
 
-CONTRACTS = json.loads(Path(__file__).with_name("contracts.json").read_text(encoding="utf-8"))
-SAMPLES = CONTRACTS["events"]
-CSV_SCHEMAS = CONTRACTS["csv"]
-EVENT_NAMES = {p["event_type"]: name for name, p in SAMPLES.items()}
+CSV_SCHEMAS = json.loads(Path(__file__).with_name("contracts.json").read_text(encoding="utf-8"))["csv"]
 
 
 def snapshot(value):
@@ -22,96 +18,6 @@ def new_id(prefix="evt"):
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
-
-
-def body(payload):
-    result = payload.get("data", {}) if payload.get("event_type") == "refund.updated" else payload
-    return result if isinstance(result, dict) else {}
-
-
-def family(payload):
-    kind = payload.get("event_type", "")
-    if not isinstance(kind, str):
-        return "Unknown"
-    if kind.startswith("authorization"):
-        return "Authorization"
-    if kind.startswith("capture"):
-        return "Capture"
-    return "Refund" if kind == "refund.updated" else "Fulfillment" if kind == "order_fulfillment_updated" else "Unknown"
-
-
-def business_key(payload):
-    b = body(payload)
-    return str(b.get("payment_id") or f"{b.get('merchant_id', '?')} / {b.get('order_reference', b.get('order_id', '?'))}")
-
-
-def expected_type(key, sample):
-    if key.endswith("_minor") or key in ("schema_version", "refund_version", "fulfillment_version"):
-        return str if isinstance(sample, str) else int
-    if sample is None:
-        return dict if key in ("action", "error") else str
-    return type(sample)
-
-
-def validate(payload, schema=None):
-    """Conservative checks of supplied shapes; no invented status enumerations."""
-    if not isinstance(payload, dict):
-        return ["$: event must be a JSON object"]
-    kind = payload.get("event_type")
-    name = schema or (EVENT_NAMES.get(kind) if isinstance(kind, str) else None)
-    if name not in SAMPLES:
-        return ["event_type: choose a supplied schema family"]
-    issues = []
-
-    def walk(sample, actual, prefix=""):
-        for key, value in sample.items():
-            path = f"{prefix}{key}"
-            # Null sample values are treated as nullable/omittable assumptions.
-            if key not in actual:
-                if value is not None:
-                    issues.append(f"{path}: missing sample-defined field")
-                continue
-            got = actual[key]
-            if got is None:
-                if value is not None:
-                    issues.append(f"{path}: null not demonstrated in sample")
-                continue
-            typ = expected_type(key, value)
-            if type(got) is not typ:
-                issues.append(f"{path}: expected {typ.__name__}")
-                continue
-            if isinstance(value, dict):
-                walk(value, got, path + ".")
-            if key.endswith("_minor") and isinstance(got, int) and got < 0:
-                issues.append(f"{path}: negative amount (testing only)")
-            if key.endswith("_at") or key.endswith("_time"):
-                try:
-                    dt = datetime.fromisoformat(got.replace("Z", "+00:00"))
-                    if dt.tzinfo is None:
-                        issues.append(f"{path}: timezone required")
-                except (ValueError, AttributeError):
-                    issues.append(f"{path}: invalid timestamp")
-    walk(SAMPLES[name], payload)
-    if payload.get("event_type") != SAMPLES[name]["event_type"]:
-        issues.append("event_type: differs from selected family")
-    if type(payload.get("schema_version")) is not type(SAMPLES[name]["schema_version"]) or payload.get("schema_version") != SAMPLES[name]["schema_version"]:
-        issues.append("schema_version: differs from supplied contract")
-    if payload.get("capture_mode", "automatic") != "automatic":
-        issues.append("capture_mode: automatic capture is the supported scope")
-    return issues
-
-
-def money(value, currency):
-    if not isinstance(currency, str):
-        return "Currency must be a string for a display conversion"
-    digits = {"EGP": 2, "USD": 2, "EUR": 2, "GBP": 2, "JPY": 0, "KWD": 3, "BHD": 3}.get(currency)
-    if digits is None:
-        return "Unknown currency exponent; no conversion assumed"
-    if type(value) is not int:
-        return "Integer minor units required"
-    with localcontext() as context:
-        context.prec = max(28, len(str(abs(value))) + 10)
-        return f"{currency} {Decimal(value).scaleb(-digits):,.{digits}f} (display only)"
 
 
 def csv_rows():

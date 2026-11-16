@@ -19,12 +19,10 @@ QWidget#sidebar QPushButton { background: transparent; color: #cfdeeb; text-alig
 QWidget#sidebar QPushButton:checked { background: #24485b; color: #74e2d4; border-left: 3px solid #38c5b4; }
 QLabel#brand { font-size: 26px; font-weight: 700; color: white; padding: 15px; }
 QLabel#pageTitle { font-size: 25px; font-weight: 650; color: #142c41; }
-QLabel#badge { color: #087f78; background: #daf3ee; padding: 7px 12px; border-radius: 5px; font-weight: 600; }
 QLabel[muted="true"] { color: #617287; }
-QLabel[error="true"] { color: #b64635; font-size: 11px; }
 QGroupBox { background: white; border: 1px solid #dbe3eb; border-radius: 7px; margin-top: 19px; padding: 17px 12px 10px; font-weight: 600; }
 QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
-QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit, QTimeEdit { background: white; border: 1px solid #ccd6e0; border-radius: 4px; padding: 6px; min-height: 20px; selection-background-color: #b5e6de; }
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit { background: white; border: 1px solid #ccd6e0; border-radius: 4px; padding: 6px; min-height: 20px; selection-background-color: #b5e6de; }
 QComboBox { padding-right: 20px; }
 QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus, QTableView:focus, QPushButton:focus { border: 2px solid #139e92; }
 QLineEdit:disabled, QComboBox:disabled { background: #edf1f5; color: #8995a2; }

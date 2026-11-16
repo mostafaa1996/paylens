@@ -1,7 +1,7 @@
 """CSV configuration and editable bounded fixtures; deliberately no CSV engine."""
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QTabWidget,
-    QCheckBox, QComboBox, QLineEdit, QSpinBox, QLabel, QDialog, QDialogButtonBox, QMessageBox)
+    QCheckBox, QComboBox, QLineEdit, QSpinBox, QLabel, QDialog, QDialogButtonBox)
 from .domain import CSV_SCHEMAS, csv_rows, snapshot
 from .widgets import RecordsModel, RecordTable, JsonView, button, row, note, scroll
 
@@ -37,7 +37,6 @@ class DatasetTab(QWidget):
     def __init__(self, name, columns, rows):
         super().__init__()
         self.name, self.columns, self.normal = name, columns, snapshot(rows)
-        self.available = True
         layout = QVBoxLayout(self)
         self.enabled = QCheckBox("Include this dataset")
         self.enabled.setChecked(True)
@@ -110,14 +109,11 @@ class DatasetTab(QWidget):
     def restore(self):
         self.model.columns = [(key, key, hint) for key, hint in self.columns]
         self.model.modified.clear()
-        self.model.refresh(snapshot(self.normal) if self.available else [])
-        self.set_state("SIMULATED • normal deterministic fixture • restored" if self.available else "Unavailable from simulated provider. No allocation derivation.")
+        self.model.refresh(snapshot(self.normal))
+        self.set_state("SIMULATED • normal deterministic fixture • restored")
         self.update_count()
 
     def apply_exception(self):
-        if not self.available:
-            self.set_state("Unavailable from simulated provider. Exception configuration retained; no report inferred.")
-            return
         if not self.exception_enabled.isChecked():
             self.set_state("Enable exceptions to apply an intentionally invalid preview.")
             return

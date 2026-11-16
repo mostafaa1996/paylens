@@ -54,14 +54,17 @@ class PayloadDefaults:
                     inherited = fill_defaults(inherited, value)
         return inherited
 
-    def add(self, key, default=None, *, inherit=False, aliases=()):
-        value = self.template.get(key)
-        if value is None and inherit:
-            value = self.previous_value(key, *aliases)
-        if isinstance(default, dict) and (value is None or isinstance(value, Mapping)):
-            value = fill_defaults(value or {}, default)
-        elif value is None:
+    def add(self, key, default=None, *, inherit=False, aliases=(), force_default=False):
+        if force_default:
             value = default() if callable(default) else deepcopy(default)
+        else:
+            value = self.template.get(key)
+            if value is None and inherit:
+                value = self.previous_value(key, *aliases)
+            if isinstance(default, dict) and (value is None or isinstance(value, Mapping)):
+                value = fill_defaults(value or {}, default)
+            elif value is None:
+                value = default() if callable(default) else deepcopy(default)
         self.result[key] = deepcopy(value)
         return value
 
